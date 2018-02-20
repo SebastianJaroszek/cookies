@@ -1,5 +1,7 @@
 package pl.dominisz;
 
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
@@ -12,25 +14,49 @@ import java.io.PrintWriter;
 public class CookieServlet extends HttpServlet {
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-
-        //TODO na podstawie requestURI wywołać jedną z poniższych metod
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String requestURI = req.getRequestURI();
-        String path = req.getContextPath();
+        if (requestURI.endsWith("/readcookies")) {
+            readCookies(req, resp);
+        } else if (requestURI.endsWith("/deletecookies")) {
+            deleteCookies(resp);
+        }
+    }
 
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String requestURI = req.getRequestURI();
         if (requestURI.endsWith("/createcookies")) {
             createCookies(req, resp);
         } else if (requestURI.endsWith("/readcookies")) {
             readCookies(req, resp);
-        } else if (requestURI.endsWith("/deletecookies")) {
-            deleteCookies(req, resp);
         }
-
-
     }
 
-    private void createCookies(HttpServletRequest req, HttpServletResponse resp) {
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String requestURI = req.getRequestURI();
+        if (requestURI.endsWith("/deletecookies")) {
+            deleteCookies(resp);
+        }
+    }
 
+    private void createCookies(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        createCookie("language", req, resp);
+        createCookie("background-color", req, resp);
+        createCookie("text-color", req, resp);
+        createCookie("text-size", req, resp);
+
+        resp.setContentType("text/html");
+        resp.setCharacterEncoding("UTF-8");
+        PrintWriter out = resp.getWriter();
+        out.println("<h3>cookies saved</h3>");
+    }
+
+    private void createCookie(String parameter, HttpServletRequest req, HttpServletResponse resp) {
+        String value = req.getParameter(parameter);
+        Cookie cookie = new Cookie(parameter, value);
+        resp.addCookie(cookie);
     }
 
     private void readCookies(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -50,7 +76,22 @@ public class CookieServlet extends HttpServlet {
         out.println("</ul>");
     }
 
-    private void deleteCookies(HttpServletRequest req, HttpServletResponse resp) {
+    private static final String[] COOKIE_NAMES = {
+            "language",
+            "background-color",
+            "text-color",
+            "text-size"
+    };
 
+    private void deleteCookies(HttpServletResponse resp) {
+        for (String cookie : COOKIE_NAMES){
+            deleteCookie(cookie, resp);
+        }
+    }
+
+    private void deleteCookie(String name, HttpServletResponse resp) {
+        Cookie cookie = new Cookie(name, "");
+        cookie.setMaxAge(0);
+        resp.addCookie(cookie);
     }
 }
